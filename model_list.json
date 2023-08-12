@@ -23,7 +23,7 @@
     {
       "name": "Deliberate",
       "type": "checkpoints",
-      "base": "SD 1.5",
+      "base": "SD1.5",
       "save_path": "default",
       "description": "This model provides you the ability to create anything you want. The more power of prompt knowledges you have, the better results you'll get.",
       "reference": "https://civitai.com/models/4823",
@@ -33,12 +33,62 @@
     {
       "name": "Realistic Vision V5.1",
       "type": "checkpoints",
-      "base": "SD 1.5",
+      "base": "SD1.5",
       "save_path": "default",
       "description": "For version 5.1 it is recommended to use with VAE (to improve generation quality and get rid of artifacts)",
-      "reference": "https://civitai.com/models/4823",
+      "reference": "https://civitai.com/models/4201",
       "filename": "Realistic_Vision_V5.1.safetensors",
       "url": "https://huggingface.co/SG161222/Realistic_Vision_V5.1_noVAE/resolve/main/Realistic_Vision_V5.1.safetensors"
+    },
+    {
+      "name": "Detail Tweaker LoRA",
+      "type": "lora",
+      "base": "SD1.5",
+      "save_path": "default",
+      "description": "This is a LoRA for enhancing/diminishing detail while keeping the overall style/character",
+      "reference": "https://civitai.com/models/58390",
+      "filename": "add_detail.safetensors",
+      "url": "https://huggingface.co/OedoSoldier/detail-tweaker-lora/resolve/main/add_detail.safetensors"
+    },
+    {
+      "name": "epi_noiseoffset",
+      "type": "lora",
+      "base": "SD1.5",
+      "save_path": "default",
+      "description": "LORA based on the Noise Offset post for better contrast and darker images",
+      "reference": "https://civitai.com/models/13941",
+      "filename": "epiNoiseoffset_v2.safetensors",
+      "url": "https://huggingface.co/adhikjoshi/epi_noiseoffset/resolve/main/epiNoiseoffset_v2.safetensors"
+    },
+    {
+      "name": "LowRA",
+      "type": "lora",
+      "base": "SD1.5",
+      "save_path": "default",
+      "description": "Trigger Words: DARK THEME",
+      "reference": "https://civitai.com/models/48139",
+      "filename": "LowRA.safetensors",
+      "url": "https://huggingface.co/zvzcxcvz/LowRA/resolve/main/LowRA.safetensors"
+    },
+    {
+      "name": "Theovercomer8's Contrast Fix (SD2.1)",
+      "type": "lora",
+      "base": "SD2.1",
+      "save_path": "default",
+      "description": "LORA: Theovercomer8's Contrast Fix (SD2.1)",
+      "reference": "https://civitai.com/models/8765/theovercomer8s-contrast-fix-sd15sd21-768",
+      "filename": "theovercomer8sContrastFix_sd21768.safetensors",
+      "url": "https://civitai.com/api/download/models/10350"
+    },
+    {
+      "name": "Theovercomer8's Contrast Fix (SD1.5)",
+      "type": "lora",
+      "base": "SD1.5",
+      "save_path": "default",
+      "description": "LORA: Theovercomer8's Contrast Fix (SD1.5)",
+      "reference": "https://civitai.com/models/8765/theovercomer8s-contrast-fix-sd15sd21-768",
+      "filename": "theovercomer8sContrastFix_sd15.safetensors",
+      "url": "https://civitai.com/api/download/models/10638"
     },
     {
       "name": "TAESDXL Decoder",
@@ -229,26 +279,6 @@
       "reference": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original",
       "filename": "vae-ft-mse-840000-ema-pruned.safetensors",
       "url": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors"
-    },
-    {
-      "name": "Theovercomer8's Contrast Fix (SD2.1)",
-      "type": "lora",
-      "base": "SD2.1",
-      "save_path": "default",
-      "description": "LORA: Theovercomer8's Contrast Fix (SD2.1)",
-      "reference": "https://civitai.com/models/8765/theovercomer8s-contrast-fix-sd15sd21-768",
-      "filename": "theovercomer8sContrastFix_sd21768.safetensors",
-      "url": "https://civitai.com/api/download/models/10350"
-    },
-    {
-      "name": "Theovercomer8's Contrast Fix (SD1.5)",
-      "type": "lora",
-      "base": "SD1.5",
-      "save_path": "default",
-      "description": "LORA: Theovercomer8's Contrast Fix (SD1.5)",
-      "reference": "https://civitai.com/models/8765/theovercomer8s-contrast-fix-sd15sd21-768",
-      "filename": "theovercomer8sContrastFix_sd15.safetensors",
-      "url": "https://civitai.com/api/download/models/10638"
     },
     {
       "name": "T2I-Adapter (depth)",
