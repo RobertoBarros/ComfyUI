@@ -1,6 +1,46 @@
 {
   "models": [
     {
+      "name": "sd_xl_base_1.0_0.9vae.safetensors",
+      "type": "checkpoints",
+      "base": "SDXL",
+      "save_path": "default",
+      "description": "Stable Diffusion XL base model (VAE 0.9)",
+      "reference": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
+      "filename": "sd_xl_base_1.0_0.9vae.safetensors",
+      "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0_0.9vae.safetensors"
+    },
+    {
+      "name": "sd_xl_refiner_1.0_0.9vae.safetensors",
+      "type": "checkpoints",
+      "base": "SDXL",
+      "save_path": "default",
+      "description": "Stable Diffusion XL refiner model (VAE 0.9)",
+      "reference": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0",
+      "filename": "sd_xl_refiner_1.0_0.9vae.safetensors",
+      "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0_0.9vae.safetensors"
+    },
+    {
+      "name": "Deliberate",
+      "type": "checkpoints",
+      "base": "SD 1.5",
+      "save_path": "default",
+      "description": "This model provides you the ability to create anything you want. The more power of prompt knowledges you have, the better results you'll get.",
+      "reference": "https://civitai.com/models/4823",
+      "filename": "deliberate_v2.safetensors",
+      "url": "https://huggingface.co/XpucT/Deliberate/resolve/main/Deliberate_v2.safetensors"
+    },
+    {
+      "name": "Realistic Vision V5.1",
+      "type": "checkpoints",
+      "base": "SD 1.5",
+      "save_path": "default",
+      "description": "For version 5.1 it is recommended to use with VAE (to improve generation quality and get rid of artifacts)",
+      "reference": "https://civitai.com/models/4823",
+      "filename": "Realistic_Vision_V5.1.safetensors",
+      "url": "https://huggingface.co/SG161222/Realistic_Vision_V5.1_noVAE/resolve/main/Realistic_Vision_V5.1.safetensors"
+    },
+    {
       "name": "TAESDXL Decoder",
       "type": "VAE",
       "base": "TAESD",
@@ -161,36 +201,6 @@
       "url": "https://civitai.com/api/download/models/9208"
     },
     {
-      "name": "sd_xl_base_1.0_0.9vae.safetensors",
-      "type": "checkpoints",
-      "base": "SDXL",
-      "save_path": "default",
-      "description": "Stable Diffusion XL base model (VAE 0.9)",
-      "reference": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
-      "filename": "sd_xl_base_1.0_0.9vae.safetensors",
-      "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0_0.9vae.safetensors"
-    },
-    {
-      "name": "sd_xl_refiner_1.0_0.9vae.safetensors",
-      "type": "checkpoints",
-      "base": "SDXL",
-      "save_path": "default",
-      "description": "Stable Diffusion XL refiner model (VAE 0.9)",
-      "reference": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0",
-      "filename": "sd_xl_refiner_1.0_0.9vae.safetensors",
-      "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0_0.9vae.safetensors"
-    },
-    {
-      "name": "Deliberate",
-      "type": "checkpoints",
-      "base": "SD 1.5",
-      "save_path": "default",
-      "description": "This model provides you the ability to create anything you want. The more power of prompt knowledges you have, the better results you'll get.",
-      "reference": "https://civitai.com/models/4823",
-      "filename": "deliberate_v2.safetensors",
-      "url": "https://huggingface.co/XpucT/Deliberate/resolve/main/Deliberate_v2.safetensors"
-    },
-    {
       "name": "illuminatiDiffusionV1_v11 unCLIP model",
       "type": "unclip",
       "base": "SD2.1",
@@ -199,6 +209,16 @@
       "reference": "https://huggingface.co/comfyanonymous/illuminatiDiffusionV1_v11_unCLIP",
       "filename": "illuminatiDiffusionV1_v11-unclip-h-fp16.safetensors",
       "url": "https://huggingface.co/comfyanonymous/illuminatiDiffusionV1_v11_unCLIP/resolve/main/illuminatiDiffusionV1_v11-unclip-h-fp16.safetensors"
+    },
+    {
+      "name": "vae-ft-mse-840000-ema-pruned",
+      "type": "VAE",
+      "base": "SD1.5 VAE",
+      "save_path": "default",
+      "description": "vae-ft-mse-840000-ema-pruned",
+      "reference": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original",
+      "filename": "vae-ft-mse-840000-ema-pruned.safetensors",
+      "url": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors"
     },
     {
       "name": "vae-ft-mse-840000-ema-pruned",
