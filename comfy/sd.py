@@ -2,6 +2,7 @@ import torch
 import contextlib
 import copy
 import inspect
+import math
 
 from comfy import model_management
 from .ldm.util import instantiate_from_config
@@ -545,11 +546,8 @@ class CLIP:
         offload_device = model_management.text_encoder_offload_device()
         params['device'] = load_device
         self.cond_stage_model = clip(**(params))
-        #TODO: make sure this doesn't have a quality loss before enabling.
-        # if model_management.should_use_fp16(load_device):
-        #     self.cond_stage_model.half()
-
-        self.cond_stage_model = self.cond_stage_model.to()
+        if model_management.should_use_fp16(load_device):
+            self.cond_stage_model.half()
 
         self.tokenizer = tokenizer(embedding_directory=embedding_directory)
         self.patcher = ModelPatcher(self.cond_stage_model, load_device=load_device, offload_device=offload_device)
@@ -1099,6 +1097,12 @@ class T2IAdapter(ControlBase):
         self.channels_in = channels_in
         self.control_input = None
 
+    def scale_image_to(self, width, height):
+        unshuffle_amount = self.t2i_model.unshuffle_amount
+        width = math.ceil(width / unshuffle_amount) * unshuffle_amount
+        height = math.ceil(height / unshuffle_amount) * unshuffle_amount
+        return width, height
+
     def get_control(self, x_noisy, t, cond, batched_number):
         control_prev = None
         if self.previous_controlnet is not None:
@@ -1116,7 +1120,8 @@ class T2IAdapter(ControlBase):
                 del self.cond_hint
             self.control_input = None
             self.cond_hint = None
-            self.cond_hint = utils.common_upscale(self.cond_hint_original, x_noisy.shape[3] * 8, x_noisy.shape[2] * 8, 'nearest-exact', "center").float().to(self.device)
+            width, height = self.scale_image_to(x_noisy.shape[3] * 8, x_noisy.shape[2] * 8)
+            self.cond_hint = utils.common_upscale(self.cond_hint_original, width, height, 'nearest-exact', "center").float().to(self.device)
             if self.channels_in == 1 and self.cond_hint.shape[1] > 1:
                 self.cond_hint = torch.mean(self.cond_hint, 1, keepdim=True)
         if x_noisy.shape[0] != self.cond_hint.shape[0]:
@@ -1128,7 +1133,11 @@ class T2IAdapter(ControlBase):
             self.t2i_model.cpu()
 
         control_input = list(map(lambda a: None if a is None else a.clone(), self.control_input))
-        return self.control_merge(control_input, None, control_prev, x_noisy.dtype)
+        mid = None
+        if self.t2i_model.xl == True:
+            mid = control_input[-1:]
+            control_input = control_input[:-1]
+        return self.control_merge(control_input, mid, control_prev, x_noisy.dtype)
 
     def copy(self):
         c = T2IAdapter(self.t2i_model, self.channels_in)
@@ -1151,11 +1160,20 @@ def load_t2i_adapter(t2i_data):
         down_opts = list(filter(lambda a: a.endswith("down_opt.op.weight"), keys))
         if len(down_opts) > 0:
             use_conv = True
-        model_ad = adapter.Adapter(cin=cin, channels=[channel, channel*2, channel*4, channel*4][:4], nums_rb=2, ksize=ksize, sk=True, use_conv=use_conv)
+        xl = False
+        if cin == 256:
+            xl = True
+        model_ad = adapter.Adapter(cin=cin, channels=[channel, channel*2, channel*4, channel*4][:4], nums_rb=2, ksize=ksize, sk=True, use_conv=use_conv, xl=xl)
     else:
         return None
-    model_ad.load_state_dict(t2i_data)
-    return T2IAdapter(model_ad, cin // 64)
+    missing, unexpected = model_ad.load_state_dict(t2i_data)
+    if len(missing) > 0:
+        print("t2i missing", missing)
+
+    if len(unexpected) > 0:
+        print("t2i unexpected", unexpected)
+
+    return T2IAdapter(model_ad, model_ad.input_channels)
 
 
 class StyleModel:
