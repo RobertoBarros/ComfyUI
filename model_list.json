@@ -49,6 +49,26 @@
       "reference": "https://civitai.com/models/48139",
       "filename": "LowRA.safetensors",
       "url": "https://huggingface.co/zvzcxcvz/LowRA/resolve/main/LowRA.safetensors"
+    },
+    {
+      "name": "BadDream",
+      "type": "embeddings",
+      "base": "SD1.5",
+      "save_path": "default",
+      "description": "Negative Embeddings",
+      "reference": "https://civitai.com/models/72437/baddream-unrealisticdream-negative-embeddings",
+      "filename": "BadDream.pt",
+      "url": "https://civitai.com/api/download/models/77169"
+    },
+    {
+      "name": "UnrealisticDream",
+      "type": "embeddings",
+      "base": "SD1.5",
+      "save_path": "default",
+      "description": "Negative Embeddings",
+      "reference": "https://civitai.com/models/72437?modelVersionId=77173",
+      "filename": "UnrealisticDream.pt",
+      "url": "https://civitai.com/api/download/models/77173"
     }
   ]
 }
