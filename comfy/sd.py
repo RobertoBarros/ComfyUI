@@ -22,6 +22,7 @@ from . import sdxl_clip
 import comfy.model_patcher
 import comfy.lora
 import comfy.t2i_adapter.adapter
+import comfy.supported_models_base
 
 def load_model_weights(model, sd):
     m, u = model.load_state_dict(sd, strict=False)
@@ -348,17 +349,19 @@ def load_checkpoint(config_path=None, ckpt_path=None, output_vae=True, output_cl
     class EmptyClass:
         pass
 
-    model_config = EmptyClass()
-    model_config.unet_config = unet_config
+    model_config = comfy.supported_models_base.BASE({})
+
     from . import latent_formats
     model_config.latent_format = latent_formats.SD15(scale_factor=scale_factor)
+    model_config.unet_config = unet_config
 
-    if config['model']["target"].endswith("LatentInpaintDiffusion"):
-        model = model_base.SDInpaint(model_config, model_type=model_type)
-    elif config['model']["target"].endswith("ImageEmbeddingConditionedLatentDiffusion"):
+    if config['model']["target"].endswith("ImageEmbeddingConditionedLatentDiffusion"):
         model = model_base.SD21UNCLIP(model_config, noise_aug_config["params"], model_type=model_type)
     else:
         model = model_base.BaseModel(model_config, model_type=model_type)
+
+    if config['model']["target"].endswith("LatentInpaintDiffusion"):
+        model.set_inpaint()
 
     if fp16:
         model = model.half()
@@ -451,20 +454,26 @@ def load_unet(unet_path): #load unet in diffusers format
     sd = comfy.utils.load_torch_file(unet_path)
     parameters = comfy.utils.calculate_parameters(sd)
     fp16 = model_management.should_use_fp16(model_params=parameters)
+    if "input_blocks.0.0.weight" in sd: #ldm
+        model_config = model_detection.model_config_from_unet(sd, "", fp16)
+        if model_config is None:
+            raise RuntimeError("ERROR: Could not detect model type of: {}".format(unet_path))
+        new_sd = sd
 
-    model_config = model_detection.model_config_from_diffusers_unet(sd, fp16)
-    if model_config is None:
-        print("ERROR UNSUPPORTED UNET", unet_path)
-        return None
+    else: #diffusers
+        model_config = model_detection.model_config_from_diffusers_unet(sd, fp16)
+        if model_config is None:
+            print("ERROR UNSUPPORTED UNET", unet_path)
+            return None
 
-    diffusers_keys = comfy.utils.unet_to_diffusers(model_config.unet_config)
+        diffusers_keys = comfy.utils.unet_to_diffusers(model_config.unet_config)
 
-    new_sd = {}
-    for k in diffusers_keys:
-        if k in sd:
-            new_sd[diffusers_keys[k]] = sd.pop(k)
-        else:
-            print(diffusers_keys[k], k)
+        new_sd = {}
+        for k in diffusers_keys:
+            if k in sd:
+                new_sd[diffusers_keys[k]] = sd.pop(k)
+            else:
+                print(diffusers_keys[k], k)
     offload_device = model_management.unet_offload_device()
     model = model_config.get_model(new_sd, "")
     model = model.to(offload_device)

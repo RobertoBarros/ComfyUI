@@ -159,6 +159,31 @@ class ConditioningSetArea:
             c.append(n)
         return (c, )
 
+class ConditioningSetAreaPercentage:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {"conditioning": ("CONDITIONING", ),
+                              "width": ("FLOAT", {"default": 1.0, "min": 0, "max": 1.0, "step": 0.01}),
+                              "height": ("FLOAT", {"default": 1.0, "min": 0, "max": 1.0, "step": 0.01}),
+                              "x": ("FLOAT", {"default": 0, "min": 0, "max": 1.0, "step": 0.01}),
+                              "y": ("FLOAT", {"default": 0, "min": 0, "max": 1.0, "step": 0.01}),
+                              "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01}),
+                             }}
+    RETURN_TYPES = ("CONDITIONING",)
+    FUNCTION = "append"
+
+    CATEGORY = "conditioning"
+
+    def append(self, conditioning, width, height, x, y, strength):
+        c = []
+        for t in conditioning:
+            n = [t[0], t[1].copy()]
+            n[1]['area'] = ("percentage", height, width, y, x)
+            n[1]['strength'] = strength
+            n[1]['set_area_to_bounds'] = False
+            c.append(n)
+        return (c, )
+
 class ConditioningSetMask:
     @classmethod
     def INPUT_TYPES(s):
@@ -244,14 +269,16 @@ class VAEDecode:
 class VAEDecodeTiled:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "samples": ("LATENT", ), "vae": ("VAE", )}}
+        return {"required": {"samples": ("LATENT", ), "vae": ("VAE", ),
+                             "tile_size": ("INT", {"default": 512, "min": 320, "max": 4096, "step": 64})
+                            }}
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "decode"
 
     CATEGORY = "_for_testing"
 
-    def decode(self, vae, samples):
-        return (vae.decode_tiled(samples["samples"]), )
+    def decode(self, vae, samples, tile_size):
+        return (vae.decode_tiled(samples["samples"], tile_x=tile_size // 8, tile_y=tile_size // 8, ), )
 
 class VAEEncode:
     @classmethod
@@ -280,15 +307,17 @@ class VAEEncode:
 class VAEEncodeTiled:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "pixels": ("IMAGE", ), "vae": ("VAE", )}}
+        return {"required": {"pixels": ("IMAGE", ), "vae": ("VAE", ),
+                             "tile_size": ("INT", {"default": 512, "min": 320, "max": 4096, "step": 64})
+                            }}
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "encode"
 
     CATEGORY = "_for_testing"
 
-    def encode(self, vae, pixels):
+    def encode(self, vae, pixels, tile_size):
         pixels = VAEEncode.vae_encode_crop_pixels(pixels)
-        t = vae.encode_tiled(pixels[:,:,:,:3])
+        t = vae.encode_tiled(pixels[:,:,:,:3], tile_x=tile_size, tile_y=tile_size, )
         return ({"samples":t}, )
 
 class VAEEncodeForInpaint:
@@ -445,7 +474,7 @@ class CheckpointLoaderSimple:
     def load_checkpoint(self, ckpt_name, output_vae=True, output_clip=True):
         ckpt_path = folder_paths.get_full_path("checkpoints", ckpt_name)
         out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
-        return out
+        return out[:3]
 
 class DiffusersLoader:
     @classmethod
@@ -471,7 +500,7 @@ class DiffusersLoader:
                     model_path = path
                     break
 
-        return comfy.diffusers_load.load_diffusers(model_path, fp16=comfy.model_management.should_use_fp16(), output_vae=output_vae, output_clip=output_clip, embedding_directory=folder_paths.get_folder_paths("embeddings"))
+        return comfy.diffusers_load.load_diffusers(model_path, output_vae=output_vae, output_clip=output_clip, embedding_directory=folder_paths.get_folder_paths("embeddings"))
 
 
 class unCLIPCheckpointLoader:
@@ -514,8 +543,8 @@ class LoraLoader:
         return {"required": { "model": ("MODEL",),
                               "clip": ("CLIP", ),
                               "lora_name": (folder_paths.get_filename_list("loras"), ),
-                              "strength_model": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
-                              "strength_clip": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                              "strength_model": ("FLOAT", {"default": 1.0, "min": -20.0, "max": 20.0, "step": 0.01}),
+                              "strength_clip": ("FLOAT", {"default": 1.0, "min": -20.0, "max": 20.0, "step": 0.01}),
                               }}
     RETURN_TYPES = ("MODEL", "CLIP")
     FUNCTION = "load_lora"
@@ -860,8 +889,8 @@ class EmptyLatentImage:
 
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "width": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
-                              "height": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
+        return {"required": { "width": ("INT", {"default": 512, "min": 16, "max": MAX_RESOLUTION, "step": 8}),
+                              "height": ("INT", {"default": 512, "min": 16, "max": MAX_RESOLUTION, "step": 8}),
                               "batch_size": ("INT", {"default": 1, "min": 1, "max": 64})}}
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "generate"
@@ -1188,7 +1217,7 @@ class KSampler:
                     {"model": ("MODEL",),
                     "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                     "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-                    "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+                    "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step":0.5, "round": 0.01}),
                     "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
                     "scheduler": (comfy.samplers.KSampler.SCHEDULERS, ),
                     "positive": ("CONDITIONING", ),
@@ -1214,7 +1243,7 @@ class KSamplerAdvanced:
                     "add_noise": (["enable", "disable"], ),
                     "noise_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                     "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-                    "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+                    "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step":0.5, "round": 0.01}),
                     "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
                     "scheduler": (comfy.samplers.KSampler.SCHEDULERS, ),
                     "positive": ("CONDITIONING", ),
@@ -1394,7 +1423,7 @@ class LoadImageMask:
         return True
 
 class ImageScale:
-    upscale_methods = ["nearest-exact", "bilinear", "area", "bicubic"]
+    upscale_methods = ["nearest-exact", "bilinear", "area", "bicubic", "lanczos"]
     crop_methods = ["disabled", "center"]
 
     @classmethod
@@ -1415,7 +1444,7 @@ class ImageScale:
         return (s,)
 
 class ImageScaleBy:
-    upscale_methods = ["nearest-exact", "bilinear", "area", "bicubic"]
+    upscale_methods = ["nearest-exact", "bilinear", "area", "bicubic", "lanczos"]
 
     @classmethod
     def INPUT_TYPES(s):
@@ -1579,6 +1608,7 @@ NODE_CLASS_MAPPINGS = {
     "ConditioningCombine": ConditioningCombine,
     "ConditioningConcat": ConditioningConcat,
     "ConditioningSetArea": ConditioningSetArea,
+    "ConditioningSetAreaPercentage": ConditioningSetAreaPercentage,
     "ConditioningSetMask": ConditioningSetMask,
     "KSamplerAdvanced": KSamplerAdvanced,
     "SetLatentNoiseMask": SetLatentNoiseMask,
@@ -1640,6 +1670,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ConditioningAverage ": "Conditioning (Average)",
     "ConditioningConcat": "Conditioning (Concat)",
     "ConditioningSetArea": "Conditioning (Set Area)",
+    "ConditioningSetAreaPercentage": "Conditioning (Set Area with Percentage)",
     "ConditioningSetMask": "Conditioning (Set Mask)",
     "ControlNetApply": "Apply ControlNet",
     "ControlNetApplyAdvanced": "Apply ControlNet (Advanced)",
@@ -1741,6 +1772,7 @@ def load_custom_nodes():
         print()
 
 def init_custom_nodes():
+    load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_latent.py"))
     load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_hypernetwork.py"))
     load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_upscale_model.py"))
     load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_post_processing.py"))
@@ -1750,4 +1782,5 @@ def init_custom_nodes():
     load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_tomesd.py"))
     load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_clip_sdxl.py"))
     load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_canny.py"))
+    load_custom_node(os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "comfy_extras"), "nodes_freelunch.py"))
     load_custom_nodes()

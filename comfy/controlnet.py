@@ -1,5 +1,6 @@
 import torch
 import math
+import os
 import comfy.utils
 import comfy.model_management
 import comfy.model_detection
@@ -142,7 +143,7 @@ class ControlNet(ControlBase):
                 if control_prev is not None:
                     return control_prev
                 else:
-                    return {}
+                    return None
 
         output_dtype = x_noisy.dtype
         if self.cond_hint is None or x_noisy.shape[2] * 8 != self.cond_hint.shape[2] or x_noisy.shape[3] * 8 != self.cond_hint.shape[3]:
@@ -154,7 +155,7 @@ class ControlNet(ControlBase):
             self.cond_hint = broadcast_image_to(self.cond_hint, x_noisy.shape[0], batched_number)
 
 
-        context = torch.cat(cond['c_crossattn'], 1)
+        context = cond['c_crossattn']
         y = cond.get('c_adm', None)
         if y is not None:
             y = y.to(self.control_model.dtype)
@@ -386,7 +387,8 @@ def load_controlnet(ckpt_path, model=None):
         control_model = control_model.half()
 
     global_average_pooling = False
-    if ckpt_path.endswith("_shuffle.pth") or ckpt_path.endswith("_shuffle.safetensors") or ckpt_path.endswith("_shuffle_fp16.safetensors"): #TODO: smarter way of enabling global_average_pooling
+    filename = os.path.splitext(ckpt_path)[0]
+    if filename.endswith("_shuffle") or filename.endswith("_shuffle_fp16"): #TODO: smarter way of enabling global_average_pooling
         global_average_pooling = True
 
     control = ControlNet(control_model, global_average_pooling=global_average_pooling)
@@ -447,10 +449,18 @@ class T2IAdapter(ControlBase):
         return c
 
 def load_t2i_adapter(t2i_data):
-    keys = t2i_data.keys()
-    if 'adapter' in keys:
+    if 'adapter' in t2i_data:
         t2i_data = t2i_data['adapter']
-        keys = t2i_data.keys()
+    if 'adapter.body.0.resnets.0.block1.weight' in t2i_data: #diffusers format
+        prefix_replace = {}
+        for i in range(4):
+            for j in range(2):
+                prefix_replace["adapter.body.{}.resnets.{}.".format(i, j)] = "body.{}.".format(i * 2 + j)
+            prefix_replace["adapter.body.{}.".format(i, j)] = "body.{}.".format(i * 2)
+        prefix_replace["adapter."] = ""
+        t2i_data = comfy.utils.state_dict_prefix_replace(t2i_data, prefix_replace)
+    keys = t2i_data.keys()
+
     if "body.0.in_conv.weight" in keys:
         cin = t2i_data['body.0.in_conv.weight'].shape[1]
         model_ad = comfy.t2i_adapter.adapter.Adapter_light(cin=cin, channels=[320, 640, 1280, 1280], nums_rb=4)
@@ -463,7 +473,7 @@ def load_t2i_adapter(t2i_data):
         if len(down_opts) > 0:
             use_conv = True
         xl = False
-        if cin == 256:
+        if cin == 256 or cin == 768:
             xl = True
         model_ad = comfy.t2i_adapter.adapter.Adapter(cin=cin, channels=[channel, channel*2, channel*4, channel*4][:4], nums_rb=2, ksize=ksize, sk=True, use_conv=use_conv, xl=xl)
     else:
