@@ -1,3 +1,6 @@
 [submodule "custom_nodes/ComfyUI-Manager"]
 	path = custom_nodes/ComfyUI-Manager
 	url = https://github.com/ltdrdata/ComfyUI-Manager.git
+[submodule "custom_nodes/comfyui-reactor-node"]
+	path = custom_nodes/comfyui-reactor-node
+	url = https://github.com/Gourieff/comfyui-reactor-node
